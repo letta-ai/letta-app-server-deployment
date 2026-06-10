@@ -2,6 +2,7 @@ FROM oven/bun:slim
 
 # Install Letta Code and the baseline tools needed by remote coding agents.
 ENV BUN_INSTALL_GLOBAL_DIR=/opt/letta-code
+ENV COREPACK_HOME=/opt/corepack
 ARG LETTA_UID=10001
 ARG LETTA_GID=10001
 ARG LETTA_CODE_VERSION=""
@@ -60,9 +61,11 @@ RUN set -eux; \
         echo "Skipping unavailable Debian package: $pkg"; \
       fi; \
     done; \
+    mkdir -p "${COREPACK_HOME}"; \
     corepack enable; \
     corepack prepare "pnpm@${PNPM_VERSION}" --activate; \
     corepack prepare "yarn@${YARN_VERSION}" --activate; \
+    corepack install -g "pnpm@${PNPM_VERSION}" "yarn@${YARN_VERSION}"; \
     curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh; \
     curl --proto '=https' --tlsv1.2 -LsSf "https://github.com/max-sixty/worktrunk/releases/download/v${WORKTRUNK_VERSION}/worktrunk-installer.sh" \
       | env WORKTRUNK_INSTALL_DIR=/usr/local WORKTRUNK_NO_MODIFY_PATH=1 sh; \
@@ -76,6 +79,7 @@ RUN set -eux; \
     bun install -g "@letta-ai/letta-code@${version}"; \
     mkdir -p /home/letta/Code /home/letta/.config /home/letta/.letta; \
     chown -R letta:letta /home/letta; \
+    chmod -R a+rX "${COREPACK_HOME}"; \
     rm -rf /var/lib/apt/lists/*
 
 ENV ENV_NAME="cloud"
@@ -87,6 +91,8 @@ ENV XDG_CONFIG_HOME="/home/letta/.config"
 
 COPY entrypoint.sh /usr/local/bin/letta-server-entrypoint
 RUN chmod +x /usr/local/bin/letta-server-entrypoint
+
+WORKDIR /home/letta/Code
 
 ENTRYPOINT ["/usr/local/bin/letta-server-entrypoint"]
 CMD ["letta-server"]
