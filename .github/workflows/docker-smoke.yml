@@ -42,4 +42,6 @@ jobs:
 
             letta channels install telegram
             letta channels install discord
+            letta channels install slack
+            letta channels install whatsapp
           '

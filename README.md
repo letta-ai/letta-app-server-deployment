@@ -114,9 +114,9 @@ Other platforms still update on rebuild:
 
 To pin a specific version, set the Docker build arg `LETTA_CODE_VERSION=<version>` or fork this repo and edit `letta-code-version.txt`.
 
-## Channels (Telegram, Discord, Slack)
+## Channels (Telegram, Discord, Slack, WhatsApp)
 
-To connect your remote agent to [Telegram, Discord, or Slack](https://docs.letta.com/letta-code/channels):
+To connect your remote agent to [Telegram, Discord, Slack, or WhatsApp](https://docs.letta.com/letta-code/channels):
 
 1. Open the [Letta Code desktop app](https://letta.com).
 2. Switch to your remote server in the device picker (bottom left).
@@ -132,7 +132,7 @@ Enabled channel adapters are restored automatically after container restarts. Yo
 |----------|---------|-------------|
 | `LETTA_API_KEY` | optional | Your Letta API key from [app.letta.com](https://app.letta.com). Developer plans only. If unset, the server uses OAuth device flow. Required for self-hosted deployments. |
 | `ENV_NAME` | `cloud` | Name shown in the environment picker on chat.letta.com |
-| `LETTA_RESTORE_ENABLED_CHANNELS` | `1` | Restores enabled channel adapters from the persistent volume when the server starts. Keep this enabled for Telegram, Discord, and Slack remotes. |
+| `LETTA_RESTORE_ENABLED_CHANNELS` | `1` | Restores enabled channel adapters from the persistent volume when the server starts. Keep this enabled for Telegram, Discord, Slack, and WhatsApp remotes. |
 | `LETTA_PACKAGE_MANAGER` | `bun` | Package manager used by Letta Code for runtime installs and self-update operations. The Docker image defaults this to Bun because Letta Code is installed with Bun in the image; npm is also present as a fallback. |
 | `LETTA_BASE_URL` | `https://api.letta.com` | Override for self-hosted Letta servers. |
 
