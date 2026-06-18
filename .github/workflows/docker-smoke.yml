@@ -1,0 +1,45 @@
+name: Docker image smoke test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build deployment image
+        run: docker build -t letta-code-server-deployment:smoke .
+
+      - name: Verify runtime tools and channel installs
+        run: |
+          set -euo pipefail
+
+          docker run --rm letta-code-server-deployment:smoke sh -lc '
+            set -eu
+
+            test "${LETTA_PACKAGE_MANAGER:-}" = "bun"
+
+            command -v bun
+            command -v node
+            command -v npm
+            command -v git
+            command -v python3
+            command -v curl
+            command -v wget
+            command -v jq
+
+            bun --version
+            node --version
+            npm --version
+            letta --version
+
+            letta channels install telegram
+            letta channels install discord
+          '

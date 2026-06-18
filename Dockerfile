@@ -6,7 +6,14 @@ FROM oven/bun:slim
 # curl/wget: common in tool and skill examples for fetching remote assets/APIs
 # jq: common in API/debug examples for inspecting JSON responses
 # nodejs: required by the installed letta CLI entrypoint
+# npm: fallback package manager for channel runtime installs and remote shell use.
+# It is installed with Bun below instead of Debian's npm package to avoid
+# pulling a large extra dependency tree into the runtime image.
 ENV BUN_INSTALL_GLOBAL_DIR=/opt/letta-code
+# The CLI is installed with Bun into /opt, so path-based package-manager
+# detection would otherwise fall back to npm. Prefer Bun for channel runtime
+# installs while still shipping npm as a compatibility fallback.
+ENV LETTA_PACKAGE_MANAGER="bun"
 
 # The GitHub workflow keeps this file at the latest published npm version.
 # Railway services connected to this repo can then auto-deploy from Git commits
@@ -18,7 +25,7 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y git python3 curl wget jq nodejs make g++; \
     version="${LETTA_CODE_VERSION:-$(cat /tmp/letta-code-version.txt)}"; \
-    bun install -g "@letta-ai/letta-code@${version}"; \
+    bun install -g "@letta-ai/letta-code@${version}" "npm@10"; \
     apt-get purge -y make g++; \
     apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*
