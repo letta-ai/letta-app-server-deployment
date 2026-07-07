@@ -36,7 +36,7 @@ The included `docker-compose.yml` mounts `letta-data` at `/root`, so auth surviv
 SSH into a $4/mo droplet and run directly:
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs python3 make g++
 npm install -g @letta-ai/letta-code
 
