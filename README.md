@@ -4,7 +4,7 @@
 
 Deploy a [Letta Code](https://docs.letta.com/letta-code) remote environment to any cloud platform. Runs `letta server` so your agent is always-on and accessible from [chat.letta.com](https://chat.letta.com) or the [Letta Code](https://letta.com) desktop app.
 
-The Docker image includes common runtime utilities used by Letta Code, tools, skills, and channel runtime installers: `nodejs`, `npm`, `git`, `python3`, `curl`, `wget`, and `jq`. The image is Bun-based and sets `LETTA_PACKAGE_MANAGER=bun`, so `letta channels install ...` uses Bun by default with npm available as a compatibility fallback.
+The Docker image includes common runtime utilities used by Letta Code, tools, skills, cron jobs, and channel runtime installers: `nodejs`, `npm`, `git`, `python3`, `curl`, `wget`, `jq`, and Unix `cron`. The image is Bun-based and sets `LETTA_PACKAGE_MANAGER=bun`, so `letta channels install ...` uses Bun by default with npm available as a compatibility fallback.
 
 ## How it works
 

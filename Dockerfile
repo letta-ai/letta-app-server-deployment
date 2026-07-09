@@ -5,6 +5,7 @@ FROM oven/bun:slim
 # python3: required at runtime for skills (e.g. Discord)
 # curl/wget: common in tool and skill examples for fetching remote assets/APIs
 # jq: common in API/debug examples for inspecting JSON responses
+# cron: Unix cron daemon for non-LLM scheduled jobs
 # Node 22: required by the installed letta CLI entrypoint and node-gyp's current undici dependency during native rebuilds
 # npm: fallback package manager for channel runtime installs and remote shell use.
 # It is installed with Bun below instead of Debian's npm package to avoid
@@ -24,7 +25,7 @@ COPY letta-code-version.txt /tmp/letta-code-version.txt
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y ca-certificates curl git python3 wget jq make g++; \
+    apt-get install -y --no-install-recommends ca-certificates cron curl git python3 wget jq make g++; \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; \
     apt-get install -y nodejs; \
     version="${LETTA_CODE_VERSION:-$(cat /tmp/letta-code-version.txt)}"; \
@@ -36,4 +37,4 @@ RUN set -eux; \
 ENV ENV_NAME="cloud"
 ENV LETTA_RESTORE_ENABLED_CHANNELS="1"
 
-CMD ["sh", "-c", "letta server --env-name \"$ENV_NAME\" --debug"]
+CMD ["sh", "-c", "cron && exec letta server --env-name \"$ENV_NAME\" --debug"]

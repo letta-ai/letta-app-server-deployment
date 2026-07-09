@@ -34,11 +34,15 @@ jobs:
             command -v curl
             command -v wget
             command -v jq
+            command -v cron
+            command -v crontab
 
             bun --version
             node --version
             npm --version
             letta --version
+            cron
+            crontab -l || test "$?" = "1"
 
             letta channels install telegram
             letta channels install discord
