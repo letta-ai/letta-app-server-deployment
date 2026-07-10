@@ -30,6 +30,7 @@ jobs:
             command -v node
             command -v npm
             command -v git
+            command -v python
             command -v python3
             command -v curl
             command -v wget
@@ -55,6 +56,8 @@ jobs:
             bun --version
             node --version
             npm --version
+            python --version
+            python3 --version
             letta --version
             cron
             crontab -l || test "$?" = "1"
