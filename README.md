@@ -6,7 +6,7 @@ Deploy a [Letta Code](https://docs.letta.com/letta-code) remote environment to a
 
 The Docker image includes common runtime utilities used by Letta Code, tools, skills, cron jobs, and channel runtime installers: `nodejs`, `npm`, `git`, `python3`, `curl`, `wget`, `jq`, and Unix `cron`. The image is Bun-based and sets `LETTA_PACKAGE_MANAGER=bun`, so `letta channels install ...` uses Bun by default with npm available as a compatibility fallback.
 
-On every boot, the container also restores Unix cron definitions from the persistent `/root` volume before starting `letta server`. That lets non-LLM scheduled jobs survive Railway container replacement.
+On every boot, the container also restores Unix cron definitions from the persistent `/root` volume before starting `letta server`. That lets non-LLM scheduled jobs survive container restarts, rebuilds, and replacement on any platform that mounts durable storage at `/root`.
 
 ## How it works
 
@@ -130,14 +130,14 @@ Enabled channel adapters are restored automatically after container restarts. Yo
 
 ## Persistent Unix cron
 
-If you want token-free scheduled jobs such as tweet posting, backups, or health checks, store cron definitions on the persistent `/root` volume instead of editing `/etc/cron.d` directly.
+If you want token-free scheduled jobs such as tweet posting, backups, or health checks, store cron definitions on the persistent `/root` volume instead of editing `/etc/cron.d` directly. This applies to Docker Compose named volumes, Fly volumes, Railway volumes, and any other container host where `/root` is mounted as durable storage.
 
 ### Supported persistent paths
 
 - `/root/.letta/system-cron/`: files copied into `/etc/cron.d/` on every boot
 - `/root/.letta/system-crontab/root`: optional root crontab installed on every boot
 
-Anything written directly into `/etc/cron.d` or the live root crontab inside a running container is ephemeral and will be lost when Railway replaces the container.
+Anything written directly into `/etc/cron.d` or the live root crontab inside a running container is ephemeral and can be lost when the container is restarted, rebuilt, redeployed, or replaced.
 
 ### Example `/root/.letta/system-cron/tweet-poster`
 
