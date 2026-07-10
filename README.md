@@ -6,7 +6,7 @@ Deploy a [Letta Code](https://docs.letta.com/letta-code) remote environment to a
 
 The Docker image includes common runtime utilities used by Letta Code, tools, skills, cron jobs, and channel runtime installers: `nodejs`, `npm`, `git`, `python3`, `curl`, `wget`, `jq`, and Unix `cron`. The image is Bun-based and sets `LETTA_PACKAGE_MANAGER=bun`, so `letta channels install ...` uses Bun by default with npm available as a compatibility fallback.
 
-On every boot, the container also restores Unix cron definitions from the persistent `/root` volume before starting `letta server`. That lets non-LLM scheduled jobs survive container restarts, rebuilds, and replacement on any platform that mounts durable storage at `/root`.
+On every boot, the container also restores Unix cron definitions from persistent storage before starting `letta server`. By default it looks under `/root/.letta`, matching this repo's `/root` volume examples, but you can point it at any durable mount with `LETTA_SYSTEM_CRON_DIR` and `LETTA_SYSTEM_ROOT_CRONTAB`.
 
 ## How it works
 
@@ -130,22 +130,29 @@ Enabled channel adapters are restored automatically after container restarts. Yo
 
 ## Persistent Unix cron
 
-If you want token-free scheduled jobs such as tweet posting, backups, or health checks, store cron definitions on the persistent `/root` volume instead of editing `/etc/cron.d` directly. This applies to Docker Compose named volumes, Fly volumes, Railway volumes, and any other container host where `/root` is mounted as durable storage.
+If you want token-free scheduled jobs such as tweet posting, backups, or health checks, store cron definitions on a persistent volume instead of editing `/etc/cron.d` directly. The default paths use `/root/.letta` because this repo's Docker Compose, Fly, and Railway examples mount durable storage at `/root`; if your platform mounts storage somewhere else, set `LETTA_SYSTEM_CRON_DIR` and `LETTA_SYSTEM_ROOT_CRONTAB` to paths on that mount.
 
 ### Supported persistent paths
 
 - `/root/.letta/system-cron/`: files copied into `/etc/cron.d/` on every boot
 - `/root/.letta/system-crontab/root`: optional root crontab installed on every boot
 
+For a durable mount at another path, for example `/data`, use:
+
+```bash
+LETTA_SYSTEM_CRON_DIR=/data/letta/system-cron
+LETTA_SYSTEM_ROOT_CRONTAB=/data/letta/system-crontab/root
+```
+
 Anything written directly into `/etc/cron.d` or the live root crontab inside a running container is ephemeral and can be lost when the container is restarted, rebuilt, redeployed, or replaced.
 
-### Example `/root/.letta/system-cron/tweet-poster`
+### Example cron file
 
 ```cron
 */15 * * * * root flock -n /tmp/tweet-poster.lock /root/.letta/x_twitter/post_tweets.sh >> /root/.letta/logs/tweet-poster.log 2>&1
 ```
 
-Place your shell script under `/root` so it lives on the mounted volume too.
+Place your shell script and logs on the same durable volume. If your persistent mount is `/data`, update the paths in the cron command to `/data/...` too.
 
 ## Configuration
 
@@ -154,8 +161,8 @@ Place your shell script under `/root` so it lives on the mounted volume too.
 | `LETTA_API_KEY` | optional | Your Letta API key from [app.letta.com](https://app.letta.com). Developer plans only. If unset, the server uses OAuth device flow. Required for self-hosted deployments. |
 | `ENV_NAME` | `cloud` | Name shown in the environment picker on chat.letta.com |
 | `LETTA_RESTORE_ENABLED_CHANNELS` | `1` | Restores enabled channel adapters from the persistent volume when the server starts. Keep this enabled for Telegram, Discord, Slack, and WhatsApp remotes. |
-| `LETTA_SYSTEM_CRON_DIR` | `/root/.letta/system-cron` | Directory on the persistent volume whose files are copied into `/etc/cron.d/` on every boot. |
-| `LETTA_SYSTEM_ROOT_CRONTAB` | `/root/.letta/system-crontab/root` | Optional root crontab file installed with `crontab` on every boot. |
+| `LETTA_SYSTEM_CRON_DIR` | `/root/.letta/system-cron` | Directory on durable storage whose files are copied into `/etc/cron.d/` on every boot. Change this if your persistent volume is mounted somewhere other than `/root`. |
+| `LETTA_SYSTEM_ROOT_CRONTAB` | `/root/.letta/system-crontab/root` | Optional root crontab file on durable storage, installed with `crontab` on every boot. Change this if your persistent volume is mounted somewhere other than `/root`. |
 | `LETTA_PACKAGE_MANAGER` | `bun` | Package manager used by Letta Code for runtime installs and self-update operations. The Docker image defaults this to Bun because Letta Code is installed with Bun in the image; npm is also present as a fallback. |
 | `LETTA_BASE_URL` | `https://api.letta.com` | Override for self-hosted Letta servers. |
 
