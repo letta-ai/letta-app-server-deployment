@@ -6,7 +6,7 @@ FROM oven/bun:slim
 # curl/wget: common in tool and skill examples for fetching remote assets/APIs
 # jq: common in API/debug examples for inspecting JSON responses
 # cron: Unix cron daemon for non-LLM scheduled jobs
-# procps/iproute2/iputils-ping/dnsutils/lsof/netcat/file/zip/unzip/less:
+# procps/iproute2/iputils-ping/dnsutils/lsof/netcat/file:
 # common Unix debugging and utility tools used from remote shells and scripts
 # Node 22: required by the installed letta CLI entrypoint and node-gyp's current undici dependency during native rebuilds
 # npm: fallback package manager for channel runtime installs and remote shell use.
@@ -27,7 +27,7 @@ COPY letta-code-version.txt /tmp/letta-code-version.txt
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates cron curl dnsutils file git iproute2 iputils-ping jq less lsof netcat-openbsd procps python3 unzip wget zip make g++; \
+    apt-get install -y --no-install-recommends ca-certificates cron curl dnsutils file git iproute2 iputils-ping jq lsof netcat-openbsd procps python3 wget make g++; \
     ln -sf /usr/bin/python3 /usr/local/bin/python; \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash -; \
     apt-get install -y nodejs; \

@@ -49,9 +49,6 @@ jobs:
             command -v lsof
             command -v nc
             command -v file
-            command -v zip
-            command -v unzip
-            command -v less
 
             bun --version
             node --version
