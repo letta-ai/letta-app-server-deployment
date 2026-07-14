@@ -22,6 +22,7 @@ ENV LETTA_PACKAGE_MANAGER="bun"
 # instead of staying pinned to the version baked into the first build.
 ARG LETTA_CODE_VERSION=""
 COPY letta-code-version.txt /tmp/letta-code-version.txt
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN set -eux; \
     apt-get update; \
@@ -30,11 +31,14 @@ RUN set -eux; \
     apt-get install -y nodejs; \
     version="${LETTA_CODE_VERSION:-$(cat /tmp/letta-code-version.txt)}"; \
     bun install -g "@letta-ai/letta-code@${version}" "npm@10"; \
+    chmod +x /usr/local/bin/entrypoint.sh; \
     apt-get purge -y make g++; \
     apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*
 
 ENV ENV_NAME="cloud"
 ENV LETTA_RESTORE_ENABLED_CHANNELS="1"
+ENV LETTA_SYSTEM_CRON_DIR="/root/.letta/system-cron"
+ENV LETTA_SYSTEM_ROOT_CRONTAB="/root/.letta/system-crontab/root"
 
-CMD ["sh", "-c", "cron && exec letta server --env-name \"$ENV_NAME\" --debug"]
+CMD ["/usr/local/bin/entrypoint.sh"]
