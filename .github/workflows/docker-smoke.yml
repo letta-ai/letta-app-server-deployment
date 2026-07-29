@@ -30,19 +30,38 @@ jobs:
             command -v node
             command -v npm
             command -v git
+            command -v python
             command -v python3
             command -v curl
             command -v wget
             command -v jq
             command -v cron
             command -v crontab
+            command -v ps
+            command -v top
+            command -v free
+            command -v pgrep
+            command -v ip
+            command -v ss
+            command -v ping
+            command -v dig
+            command -v nslookup
+            command -v lsof
+            command -v nc
+            command -v file
 
             bun --version
             node --version
             npm --version
+            python --version
+            python3 --version
             letta --version
             cron
             crontab -l || test "$?" = "1"
+            ps -p 1 -o pid=,comm=
+            ip addr show lo
+            ping -c 1 127.0.0.1
+            file /bin/sh
 
             letta channels install telegram
             letta channels install discord
