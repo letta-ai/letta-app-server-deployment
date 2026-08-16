@@ -18,44 +18,29 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Check entrypoint syntax
-        run: sh -n start-app-server.sh
+        run: sh -n start-computer.sh
 
       - name: Build deployment image
-        run: docker build --tag letta-app-server:smoke .
+        run: docker build --tag letta-computer:smoke .
 
-      - name: Start App Server
-        run: |
-          docker run --detach \
-            --name letta-app-server \
-            --publish 4500:4500 \
-            --env LETTA_APP_SERVER_TOKEN=deployment-smoke-token \
-            letta-app-server:smoke
-
-      - name: Verify health and authentication
+      - name: Verify runtime tools and channel installs
         run: |
           set -euo pipefail
-          for _ in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:4500/readyz >/dev/null; then
-              break
-            fi
-            sleep 1
-          done
-
-          curl --fail --silent http://127.0.0.1:4500/readyz
-
-          status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
-            http://127.0.0.1:4500/app-server-info)"
-          test "$status" = "401"
-
-          curl --fail --silent \
-            --header 'Authorization: Bearer deployment-smoke-token' \
-            http://127.0.0.1:4500/app-server-info \
-            | jq --exit-status '.type == "app_server_info_response" and .backend == "local"'
-
-      - name: Show App Server logs
-        if: failure()
-        run: docker logs letta-app-server
-
-      - name: Stop App Server
-        if: always()
-        run: docker rm --force letta-app-server || true
+          docker run --rm --entrypoint sh letta-computer:smoke -lc '
+            set -eu
+            command -v node
+            command -v npm
+            command -v git
+            command -v python3
+            command -v curl
+            command -v wget
+            command -v jq
+            command -v cron
+            command -v crontab
+            letta --version
+            letta server --help
+            letta channels install telegram
+            letta channels install discord
+            letta channels install slack
+            letta channels install whatsapp
+          '
