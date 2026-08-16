@@ -1,149 +1,50 @@
-# Letta Code Remote Deployment
+# Letta App Server deployment
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/letta-code-remote?utm_medium=integration&utm_source=template&utm_campaign=generic)
+Deploy [Letta App Server](https://docs.letta.com/platform/app-server) with Docker and connect through the [Letta Agent SDK](https://docs.letta.com/agent-sdk).
 
-Deploy a [Letta Code](https://docs.letta.com/letta-code) remote environment to any cloud platform. Runs `letta server` so your agent is always-on and accessible from [chat.letta.com](https://chat.letta.com) or the [Letta Code](https://letta.com) desktop app.
-
-The Docker image includes common runtime utilities used by Letta Code, tools, skills, cron jobs, and channel runtime installers: `nodejs`, `npm`, `git`, `python3`, `curl`, `wget`, `jq`, and Unix `cron`. The image is Bun-based and sets `LETTA_PACKAGE_MANAGER=bun`, so `letta channels install ...` uses Bun by default with npm available as a compatibility fallback.
-
-## How it works
-
-`letta server` opens an outbound WebSocket to Letta Cloud. No inbound ports, no reverse proxy, no domain name needed.
-
-## Authentication
-
-On first deploy, `letta server` starts an OAuth device flow and prints an authorization URL in the logs. Open the URL, approve the request, and the server connects. Auth tokens are persisted under `~/.letta/`, so container deployments need a persistent volume mounted at `/root` to survive restarts.
-
-OAuth is the only authentication method on Pro, Max-lite, and Max plans. On Developer plans, you can alternatively set `LETTA_API_KEY` as an environment variable to skip OAuth.
-
-If you set `LETTA_BASE_URL` to a self-hosted server, device flow is not available. Use `LETTA_API_KEY`.
-
-## Quick start (Docker)
+## Docker Compose
 
 ```bash
 cp .env.example .env
-docker compose up -d
+# Replace LETTA_APP_SERVER_TOKEN and set a model provider key in .env.
+docker compose up --build -d
 docker compose logs -f
-# Check the logs for the OAuth URL and approve it in your browser
 ```
 
-The included `docker-compose.yml` mounts `letta-data` at `/root`, so auth survives container restarts.
+App Server listens on `http://localhost:4500`. The Compose configuration keeps agent state in `letta-state` and gives agents a persistent `/workspace` volume.
 
-## Deploy to a cloud platform
+Connect from a Node.js application:
 
-### DigitalOcean
+```typescript
+import { LettaAgentClient } from "@letta-ai/letta-agent-sdk";
 
-SSH into a $4/mo droplet and run directly:
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-apt-get install -y nodejs python3 make g++
-npm install -g @letta-ai/letta-code
-
-letta server --env-name "cloud"
-# Check the output for the OAuth URL and approve it in your browser
+const client = new LettaAgentClient({
+  backend: "remote",
+  url: "http://localhost:4500",
+  authToken: process.env.LETTA_APP_SERVER_TOKEN,
+});
 ```
 
-Or use Docker:
-
-```bash
-apt-get install -y docker.io docker-compose-v2
-git clone https://github.com/letta-ai/letta-code-server-deployment.git
-cd letta-code-server-deployment
-cp .env.example .env
-docker compose up -d
-docker compose logs -f
-# Check the logs for the OAuth URL and approve it in your browser
-```
-
-If you bootstrap with OAuth over SSH, the saved auth state under `/root/.letta` is reused across restarts.
-
-### Fly.io
-
-```bash
-fly launch --name letta-remote --no-deploy
-fly volumes create letta_data --region sjc --size 1
-fly deploy
-fly logs --app letta-remote
-# Check the logs for the OAuth URL and approve it in your browser
-```
-
-The included `fly.toml` mounts `/root`, so auth survives machine restarts.
-
-### Railway
-
-#### One-click template
-
-Use the **Deploy on Railway** button at the top of this README. The template includes a persistent volume mounted at `/root`.
-
-After deployment, open the deploy logs, find the OAuth URL, and approve it in your browser.
-
-#### Git-backed auto-updating deployment
-
-For deployments that should automatically pick up new Letta Code releases, connect the service to this GitHub repo instead of leaving it as a pinned template snapshot:
-
-- Repository: `letta-ai/letta-code-server-deployment`
-- Branch: `main`
-- Root directory: `/`
-- Builder: Dockerfile
-- Volume mount: `/root`
-- Automatic deploys: enabled
-
-This repo commits a `letta-code-version.txt` bump whenever a new `@letta-ai/letta-code` npm release ships. Railway then sees a normal Git commit and redeploys services connected to `main`.
-
-Or via CLI:
-
-```bash
-railway init
-railway up
-railway logs
-# Check the logs for the OAuth URL and approve it in your browser
-```
-
-## Updating
-
-This repo tracks the Letta Code npm release in `letta-code-version.txt`. A scheduled GitHub Actions workflow checks `@letta-ai/letta-code` and commits a version bump to `main` when a new release ships.
-
-That gives Railway a real Git commit to deploy. Any Railway service connected to this repo with automatic deploys enabled will rebuild and install the new Letta Code version without manual redeploys.
-
-Other platforms still update on rebuild:
-
-- **Railway template snapshots**: reconnect the service to `letta-ai/letta-code-server-deployment` on branch `main`, then enable automatic deploys.
-- **Fly**: `fly deploy`.
-- **Docker Compose**: `docker compose build --pull && docker compose up -d`.
-
-To pin a specific version, set the Docker build arg `LETTA_CODE_VERSION=<version>` or fork this repo and edit `letta-code-version.txt`.
-
-## Channels (Telegram, Discord, Slack, WhatsApp)
-
-To connect your remote agent to [Telegram, Discord, Slack, or WhatsApp](https://docs.letta.com/letta-code/channels):
-
-1. Open the [Letta Code desktop app](https://letta.com).
-2. Switch to your remote server in the device picker (bottom left).
-3. Open the **Channels** sidebar and add a Telegram bot or Slack app.
-
-Configuration, pairing, and binding all happen through the app's WebSocket control channel — no shell access or env vars needed on the server.
-
-Enabled channel adapters are restored automatically after container restarts. You should not need to edit the Railway start command or add `--channels telegram` manually.
+The SDK converts HTTP and HTTPS base URLs to WS and WSS connections at `/ws`.
 
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LETTA_API_KEY` | optional | Your Letta API key from [app.letta.com](https://app.letta.com). Developer plans only. If unset, the server uses OAuth device flow. Required for self-hosted deployments. |
-| `ENV_NAME` | `cloud` | Name shown in the environment picker on chat.letta.com |
-| `LETTA_RESTORE_ENABLED_CHANNELS` | `1` | Restores enabled channel adapters from the persistent volume when the server starts. Keep this enabled for Telegram, Discord, Slack, and WhatsApp remotes. |
-| `LETTA_PACKAGE_MANAGER` | `bun` | Package manager used by Letta Code for runtime installs and self-update operations. The Docker image defaults this to Bun because Letta Code is installed with Bun in the image; npm is also present as a fallback. |
-| `LETTA_BASE_URL` | `https://api.letta.com` | Override for self-hosted Letta servers. |
+- `LETTA_APP_SERVER_TOKEN` is required. Generate one with `openssl rand -hex 32`.
+- `LETTA_BACKEND=local` keeps agent state in the mounted Letta directory.
+- `LETTA_BACKEND=cloud` keeps agent state in Letta Cloud and requires `LETTA_API_KEY`.
+- `PORT` defaults to `4500`.
+- Session `cwd` values must point to directories inside the container, such as `/workspace`.
 
-## Verify
+For production, terminate TLS in front of App Server and connect with an HTTPS or WSS URL. The included Fly.io and Railway configurations proxy WebSockets and check `/readyz`.
 
-1. Deploy using any method above
-2. Open [chat.letta.com](https://chat.letta.com) or the [Letta Code](https://letta.com) desktop app
-3. Select your remote environment from the picker (bottom left)
-4. Send a message
+## Image version
 
-## Docs
+The Dockerfile uses `ghcr.io/letta-ai/letta-code:latest`. Pin a release when reproducible builds matter:
 
-- [Remote environments](https://docs.letta.com/letta-code/remote)
-- [Letta Code](https://docs.letta.com/letta-code)
+```bash
+docker build \
+  --build-arg LETTA_CODE_IMAGE=ghcr.io/letta-ai/letta-code:0.30.21 \
+  -t my-letta-app-server .
+```
+
+See [Deploying your agents](https://docs.letta.com/agent-sdk/deployment) for backend choices and the [App Server Docker guide](https://docs.letta.com/agent-sdk/examples/docker) for complete deployment guidance.

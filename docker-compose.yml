@@ -1,10 +1,14 @@
 services:
-  letta-server:
+  app-server:
     build: .
-    restart: always
+    restart: unless-stopped
     env_file: .env
+    ports:
+      - "4500:4500"
     volumes:
-      - letta-data:/root
+      - letta-state:/root/.letta
+      - letta-workspace:/workspace
 
 volumes:
-  letta-data:
+  letta-state:
+  letta-workspace:
